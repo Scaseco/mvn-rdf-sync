@@ -1,0 +1,137 @@
+version: "3.3"
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    env_file: .env
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 22181:2181
+    user: "${USER_ID}:${GROUP_ID}"
+    # volumes:
+      # Configuation example: https://github.com/wurstmeister/kafka-docker/issues/559
+      # - ./volumes/zookeeper/1/log:/var/lib/zookeeper/log    
+    # network_mode: "host"
+    # networks:
+    #  - mvn-sync-net
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - 29092:29092
+      - 9092:9092
+    # network_mode: "host"
+    volumes:
+      - ./volumes/kafka/1/data:/var/lib/kafka/data
+    user: "${USER_ID}:${GROUP_ID}"
+    env_file: .env
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    # networks:
+    #  - mvn-sync-net
+
+  mvn-db:
+    image: aksw/rpt
+    # environment:
+      #USER_ID: "${USER_ID}"
+      #GROUP_ID: "${GROUP_ID}"
+    user: "${USER_ID}:${GROUP_ID}"
+    volumes:
+      - ./volumes/tdb2-data:/data
+    working_dir: /
+    command: integrate -X --server --db-engine tdb2 --db-loc /data --db-keep
+    # network_mode: "host"
+    ports:
+      - "6840:8642"  # Sync process
+    restart: on-failure
+    # networks:
+    #  - mvn-sync-net
+
+  mvn-sync-producer:
+    # profiles: ["tmp"]
+    depends_on:
+      - kafka
+    # image: tenforce/virtuoso
+    build:
+      context: .
+      args:
+        KAFKA_HOME: "${KAFKA_HOME}"
+        USER_ID: "${USER_ID}"
+        GROUP_ID: "${GROUP_ID}"
+    env_file: .env
+    environment:
+      KAFKA_HOME: "${KAFKA_HOME}"
+      KAFKA_TOPIC: "${KAFKA_TOPIC}"
+      KAFKA_BOOTSTRAP_SERVER: "${KAFKA_BOOTSTRAP_SERVER}"
+      USER_ID: "${USER_ID}"
+      GROUP_ID: "${GROUP_ID}"
+    user: "${USER_ID}:${GROUP_ID}"
+      # WORKDIR: /workdir
+    volumes:
+      # - ~/.m2/repository:/home/user/.m2/host-repository
+      - ./resources:/home/user/mvn-sync/resources
+      - ~/.m2/repository:/watches/repository
+    entrypoint: ["/home/user/mvn-sync/resources/mvn-sync-producer.sh", "/watches"]
+    # entrypoint: ["/home/user/mvn-sync/resources/start.sh", "/repository", "/workdir"]
+#    network_mode: "host"
+#    ports:
+#      - "1111:1111"
+#      - "8890:8890"
+    restart: on-failure
+    # networks:
+    #  - mvn-sync-net
+
+  mvn-sync-consumer:
+    # profiles: ["tmp"]
+    depends_on:
+      - kafka
+    build:
+      context: .
+      args:
+        KAFKA_HOME: "${KAFKA_HOME}"
+        USER_ID: "${USER_ID}"
+        GROUP_ID: "${GROUP_ID}"
+    env_file: .env
+    environment:
+      KAFKA_HOME: "${KAFKA_HOME}"
+      KAFKA_TOPIC: "${KAFKA_TOPIC}"
+      KAFKA_BOOTSTRAP_SERVER: "${KAFKA_BOOTSTRAP_SERVER}"
+      USER_ID: "${USER_ID}"
+      GROUP_ID: "${GROUP_ID}"
+      SPARQL_ENDPOINT: "${SPARQL_ENDPOINT}"
+    user: "${USER_ID}:${GROUP_ID}"
+      # WORKDIR: /workdir
+    volumes:
+      # - ~/.m2/repository:/home/user/.m2/host-repository
+      - ~/.m2/repository:/home/user/.m2/repository
+      - ~/.m2/repository:/watches/repository
+      - ~/.gnupg:/home/user/.gnupg
+      - ./target/repository:/home/user/.m2/cache-repository
+      - ./settings.xml:/home/user/.m2/settings.xml
+      - ./volumes/workdir:/workdir
+      - ./resources:/home/user/mvn-sync/resources
+      - ./prepublish:/home/user/mvn-sync/prepublish
+    # entrypoint: ["/home/user/mvn-sync/resources/mvn-sync-consumer.sh", "/watches", "/workdir"]
+    entrypoint: ["/home/user/mvn-sync/resources/mvn-sync-consumer.sh", "/workdir", "${SPARQL_ENDPOINT}"]
+    # entrypoint: ["/home/user/mvn-sync/resources/start.sh", "/repository", "/workdir"]
+#    network_mode: "host"
+#    ports:
+#      - "1111:1111"
+#      - "8890:8890"
+    restart: on-failure
+    # networks:
+    #   - mvn-sync-net
+
+#networks:
+#  mvn-sync-net:
+
+

@@ -1,0 +1,65 @@
+PREFIX norse: <https://w3id.org/aksw/norse#>
+
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX ex: <http://example.org/resource/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX sdo: <http://schema.org/>
+PREFIX t:   <https://schema.coypu.org/metadata-template#>
+
+SELECT ?s ?p ?o {
+  BIND("http://foo" AS ?base)
+  BIND(norse:xml.parse("target/dcat-generator-0.0.1-SNAPSHOT.pom") AS ?xml)
+  LATERAL {
+      { # Basic Project Information (Name, Description, URL)
+        BIND(IRI(norse:xml.path(?xml, "/*/:url/text()")) AS ?url)
+        BIND(norse:xml.path(?xml, "/*/:name/text()") AS ?name)
+        BIND(norse:xml.path(?xml, "/*/:description/text()") AS ?description)
+        LATERAL {
+            { BIND(?datasetId AS ?s) BIND(dcat:landingPage AS ?p) BIND(?url AS ?o) }
+          UNION
+            { BIND(?datasetId AS ?s) BIND(rdfs:label AS ?p) BIND(?name AS ?o) }
+          UNION
+            { BIND(?datasetId AS ?s) BIND(rdfs:comment AS ?p) BIND(?description AS ?o) }
+        }        
+      }
+    UNION
+      { # Licenses
+        ?xml norse:xml.unnest ("/*/:licenses/:license" ?license) .
+        BIND(IRI(norse:xml.path(?license, "/*/:url/text()")) AS ?licenseUrl)
+        BIND(norse:xml.path(?license, "/*/:name/text()") AS ?licenseName)
+        LATERAL {
+            { BIND(?datasetId AS ?s) BIND(dct:license AS ?p) BIND(?licenseUrl AS ?o) }
+          UNION
+            { BIND(?datasetId AS ?s) BIND(t:licenseNote AS ?p) BIND(?licenseName AS ?o) }
+        }
+      }
+    UNION
+      { # Developers
+        ?xml norse:xml.unnest ("/*/:developers/:developer" ?dev) .
+        BIND(norse:xml.path(?dev, "/*/:name/text()") AS ?devName)
+        BIND(norse:xml.path(?dev, "/*/:url/text()") AS ?devUrl)
+        BIND(IRI(CONCAT(?base, 'dev/', ENCODE_FOR_URI(COALESCE(STR(?devUrl), ?devName)))) AS ?devId)
+
+        BIND(norse:xml.path(?dev, "/*/:organization/text()") AS ?devOrgName)
+        BIND(IRI(norse:xml.path(?dev, "/*/:organizationUrl/text()")) AS ?devOrgUrl)
+        BIND(IRI(CONCAT(?base, 'org/', ENCODE_FOR_URI(COALESCE(STR(?devOrgUrl), ?devOrgName)))) AS ?devOrgId)
+
+        LATERAL {
+            { BIND(?datasetId AS ?s) BIND(dcat:contributor AS ?p) BIND(?devId AS ?o) }
+          UNION
+            { BIND(?devId AS ?s) BIND(foaf:name AS ?p) BIND(?devName AS ?o) }
+          UNION
+            { BIND(?devId AS ?s) BIND(org:memberOf AS ?p) BIND(?devOrgId AS ?o) }
+          UNION
+            { BIND(?devOrgId AS ?s) BIND(rdfs:label AS ?p) BIND(?devOrgName AS ?o) }
+          UNION
+            { BIND(?devOrgId AS ?s) BIND(eg:website AS ?p) BIND(?devOrgUrl AS ?o) }
+        }
+      }
+    }
+}

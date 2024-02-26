@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>${OUT_GROUPID}</groupId>
+  <artifactId>${OUT_ARTIFACTID}</artifactId>
+  <version>${OUT_VERSION}</version>
+
+  <parent>
+    <groupId>org.aksw.data.config</groupId>
+    <artifactId>dcat-generator</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <relativePath></relativePath>
+  </parent>
+
+  <packaging>pom</packaging>
+
+  <properties>
+    <input.groupId>${IN_GROUPID}</input.groupId>
+    <input.artifactId>${IN_ARTIFACTID}</input.artifactId>
+    <input.version>${IN_VERSION}</input.version>
+    <input.type>${IN_TYPE}</input.type>
+  </properties>
+</project>
