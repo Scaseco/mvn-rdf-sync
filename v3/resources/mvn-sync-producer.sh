@@ -61,8 +61,8 @@ parse-repo-path() {
   echo "${amap[@]@K}"
 }
 
-# Create the topic if it doesn't already exist
-"$KAFKA_HOME"/bin/kafka-topics.sh --create --topic "$KAFKA_TOPIC" --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" || true
+# By default auto topic creation is enabled upon publishing --consumer-property "auto.create.topics.enable=true"
+# "$KAFKA_HOME"/bin/kafka-topics.sh --create --topic "$KAFKA_TOPIC" --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" || true
 
 #echo "CLOSE_WRITE,CLOSE /watches/repository/org/aksw/data/gtfsbench/gtfsbench-csv-1-files/0.0.1-SNAPSHOT/_remote.repositories" | \
 inotifywait "$WATCH_DIR" --recursive --monitor --format '%e %w%f' --event CLOSE_WRITE --event DELETE | \

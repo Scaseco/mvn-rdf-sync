@@ -14,7 +14,9 @@ echoerr "docker-compose environment configured with user-id=$USER_ID and group-i
 
 VOLUMES_BASE="./volumes"
 
+mkdir -p "$VOLUMES_BASE/zookeeper/1/data"
 mkdir -p "$VOLUMES_BASE/zookeeper/1/log"
+
 mkdir -p "$VOLUMES_BASE/kafka/1/data"
 
 mkdir -p "$VOLUMES_BASE/workdir"

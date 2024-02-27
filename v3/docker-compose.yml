@@ -9,10 +9,11 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - 22181:2181
-    user: "${USER_ID}:${GROUP_ID}"
-    # volumes:
+#    user: "${USER_ID}:${GROUP_ID}"
+    volumes:
       # Configuation example: https://github.com/wurstmeister/kafka-docker/issues/559
-      # - ./volumes/zookeeper/1/log:/var/lib/zookeeper/log    
+      - ./volumes/zookeeper/1/data:/var/lib/zookeeper/data
+      - ./volumes/zookeeper/1/log:/var/lib/zookeeper/log        
     # network_mode: "host"
     # networks:
     #  - mvn-sync-net

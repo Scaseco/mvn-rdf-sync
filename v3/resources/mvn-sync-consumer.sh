@@ -86,9 +86,9 @@ process-file() {
 }
 
 # Create the topic if it doesn't already exist
-"$KAFKA_HOME"/bin/kafka-topics.sh --create --topic "$KAFKA_TOPIC" --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" || true
+# "$KAFKA_HOME"/bin/kafka-topics.sh --create --topic "$KAFKA_TOPIC" --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" || true
 
-"$KAFKA_HOME"/bin/kafka-console-consumer.sh --topic "$KAFKA_TOPIC" --from-beginning --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" | \
+"$KAFKA_HOME"/bin/kafka-console-consumer.sh --topic "$KAFKA_TOPIC" --group "$KAFKA_GROUP" --from-beginning --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" | \
   while read RECORD; do
     echo "Received raw record: $RECORD"
     declare -A map="($(json-to-assoc "$RECORD"))"
