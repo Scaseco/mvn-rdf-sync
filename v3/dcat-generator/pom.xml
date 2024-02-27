@@ -126,14 +126,14 @@
 
           <plugin>
             <groupId>org.aksw.maven.plugins</groupId>
-            <artifactId>sparql-maven-plugin</artifactId>
+            <artifactId>rpt-full-maven-plugin</artifactId>
             <version>0.0.1-SNAPSHOT</version>
             <executions>
               <execution>
                 <id>generate-metadata</id>
                 <phase>process-resources</phase>
                 <goals>
-                  <goal>run</goal>
+                  <goal>integrate</goal>
                 </goals>
                 <configuration>
                   <outputFile>${output.path}</outputFile>
