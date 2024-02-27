@@ -9,8 +9,7 @@
 # /absolute/path/to/repo  ./org/aksw/jenax/jenax-models-dcat-api/4.8.0-1-SNAPSHOT/jenax-models-dcat-api-4.8.0-1-20230317.133558-57-sources.jar.sha1
 #
 parse-maven-path() {
-  declare -n amap="$1"
-  dcatFile="$2"
+  dcatFile="$1"
 
   snapshotVersionPattern='-\\d+\.\\d+-\\d+'
 
@@ -60,7 +59,10 @@ parse-maven-path() {
   tStr="${ct#"-$c"}"
   t="${tStr#"."}"
   
+  
   # Parse groupId, artifactId and version from the maven-metadata.xml file
+  declare -A amap
+
   amap['groupId']="$groupId"
   amap['artifactId']="$artifactId"
   amap['version']="$version"
@@ -75,13 +77,12 @@ parse-maven-path() {
   amap['snapshotQualifier']="$q"
   
   amap['versionSuffix']="$snapshot"
+  echo "${amap[@]@K}"
 }
 
 path-to-maven-gav() {
   dcatFile="$1"
-  declare -A map
-
-  parse-maven-path "map" "$dcatFile"
+  declare -A map = "($(parse-maven-path "$dcatFile"))"
   echo "${map['groupId']}:${map['artifactId']}:${map['version']}"
   # echo "${map['groupId']}:${map['artifactId']}:${map['version']} | ${map['classifier']} | ${map['type']} | ${map['snapshotQualifier']} | ${map['versionSuffix']}"
 }

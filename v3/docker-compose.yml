@@ -1,7 +1,7 @@
 version: "3.3"
 
 services:
-  zookeeper:
+  zookeeper-1:
     image: confluentinc/cp-zookeeper:latest
     env_file: .env
     environment:
@@ -17,10 +17,10 @@ services:
     # networks:
     #  - mvn-sync-net
 
-  kafka:
+  kafka-1:
     image: confluentinc/cp-kafka:latest
     depends_on:
-      - zookeeper
+      - zookeeper-1
     ports:
       - 29092:29092
       - 9092:9092
@@ -31,8 +31,8 @@ services:
     env_file: .env
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -59,7 +59,7 @@ services:
   mvn-sync-producer:
     # profiles: ["tmp"]
     depends_on:
-      - kafka
+      - kafka-1
     # image: tenforce/virtuoso
     build:
       context: .
@@ -93,7 +93,7 @@ services:
   mvn-sync-consumer:
     # profiles: ["tmp"]
     depends_on:
-      - kafka
+      - kafka-1
     build:
       context: .
       args:

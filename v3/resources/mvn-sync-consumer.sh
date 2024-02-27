@@ -54,8 +54,7 @@ process-file() {
     # Future versions of this script could support options for that
 
     echoerr "Processing as data artifact: $RELFILE (under $PREFIX)"
-    declare -A map
-    parse-maven-path "map" "$RELFILE"
+    declare -A map="($(parse-maven-path "$RELFILE"))"
 
     export IN_GROUPID="${map['groupId']}"
     export IN_ARTIFACTID=${map['artifactId']}
@@ -91,7 +90,8 @@ process-file() {
 
 "$KAFKA_HOME"/bin/kafka-console-consumer.sh --topic "$KAFKA_TOPIC" --from-beginning --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" | \
   while read RECORD; do
-    declare -A map="$(json-to-assoc "${RECORD[@]}")"
+    echo "Received raw record: $RECORD"
+    declare -A map="($(json-to-assoc "$RECORD"))"
 
     PREFIX="${map['prefix']}"
     RELFILE="${map['relFile']}"
@@ -99,7 +99,7 @@ process-file() {
 
     echo "Change $EVENT in '$RELFILE' (under '$PREFIX')"    
     
-    echo "$WORK_DIR $PREFIX $RELFILE $EVENT"
-    # process-file "$WORK_DIR" "$PREFIX" "$RELFILE" "$EVENT"
+    echo "Processing: $WORK_DIR $PREFIX $RELFILE $EVENT"
+    process-file "$WORK_DIR" "$PREFIX" "$RELFILE" "$EVENT"
   done
 

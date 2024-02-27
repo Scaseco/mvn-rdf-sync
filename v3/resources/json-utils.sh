@@ -2,7 +2,7 @@
 
 ##
 # Convert a bash map to json.
-# assoc-to-json "${assoc[@]}" ["jsonl"]
+# assoc-to-json "${assoc[@]@K}" ["jsonl"]
 #
 # Source: https://stackoverflow.com/a/44792595/160790
 #
@@ -40,10 +40,11 @@ function test-json-utils() {
   JSON='{"hello": "world", "bye": "void"}'
 
   echo "json-to-assoc:"
-  declare -A assoc="$(json-to-assoc "$JSON")"
-  echo -e "${assoc[@]}\n"
+  tmp="($(json-to-assoc "$JSON"))"
+  echo "tmp: $tmp"
+  declare -A assoc="$tmp"
   
   echo "assoc-to-json:"
-  assoc-to-json "$assoc" "jsonl"
+  assoc-to-json "${assoc[@]@K}" "jsonl"
 }
 
