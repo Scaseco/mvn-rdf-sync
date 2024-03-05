@@ -39,18 +39,18 @@ def prettify_xml(s):
 
 
 build_path = 'target/build'
-#consumer_path = 'consumer'
+consumer_path = 'target/consumer'
 os.makedirs(build_path, exist_ok=True)
-#os.makedirs(consumer_path, exist_ok=True)
+os.makedirs(consumer_path, exist_ok=True)
 
 env = Environment(loader=FileSystemLoader('resources'))
 artifact_template = env.get_template('artifact.template.pom.xml')
 parent_template = env.get_template('parent.template.pom.xml')
-#consumer_template = env.get_template('consumer.template.pom.xml')
+consumer_template = env.get_template('consumer.template.pom.xml')
 
 # Open the file and process each line
 modules = []
-for sub_module_idx in range(1, 2):
+for sub_module_idx in range(1, 500):
   triple_count = sub_module_idx * 1000
   # artifact_id = f'{project_prefix}{triple_count}'
   artifact_id = f'{project_prefix}{sub_module_idx}'
@@ -104,16 +104,16 @@ for sub_module_idx in range(1, 2):
   with open(f'{build_path}/pom.xml', "w") as file:
     file.write(rendered)
 
-  #consumer = {
-  #  "parentStr": parent_str,
-  #  "groupId": group_id,
-  #  "artifactId": f'{project_prefix}consumer',
-  #  "version": version,
-  #  "modules": modules
-  #}
-  #rendered = consumer_template.render(this=consumer)
-  #rendered = prettify_xml(rendered)
-  #with open(f'{consumer_path}/pom.xml', "w") as file:
-  #  file.write(rendered)
+  consumer = {
+    "parentStr": parent_str,
+    "groupId": group_id,
+    "artifactId": f'{project_prefix}consumer',
+    "version": version,
+    "modules": modules
+  }
+  rendered = consumer_template.render(this=consumer)
+  rendered = prettify_xml(rendered)
+  with open(f'{consumer_path}/pom.xml', "w") as file:
+    file.write(rendered)
 
-      
+

@@ -7,6 +7,9 @@
 	<artifactId>{{this.artifactId}}</artifactId>
 	<version>{{this.version}}</version>
 
+        <!-- Generated pom file mainly used to clean up the repository: -->
+        <!-- mvn dependency:purge-local-repository -DreResolve=false -DactTransitively=false -->
+
 	{{this.parentStr}}
 
 	<packaging>pom</packaging>
@@ -15,6 +18,17 @@
 		<datasetDirectory>${project.build.directory}/datasets</datasetDirectory>
 	</properties>
 
+	<dependencies>
+		{% for item in this.modules %}
+		<dependency>
+			<groupId>{{item.groupId}}</groupId>
+			<artifactId>{{item.artifactId}}</artifactId>
+			<version>{{item.version}}</version>
+			<type>{{item.data.type}}</type>
+		</dependency>
+		{% endfor %}
+	</dependencies>
+
 	<build>
 		<resources>
 			<resource>
@@ -22,6 +36,7 @@
 			</resource>
 		</resources>
 
+<!--
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -41,7 +56,7 @@
 									<groupId>{{item.groupId}}</groupId>
 									<artifactId>{{item.artifactId}}</artifactId>
 									<version>{{item.version}}</version>
-									<type>{{item.output.filetype}}</type>
+									<type>{{item.data.type}}</type>
 									<overWrite>true</overWrite>
 									<outputDirectory>${datasetDirectory}</outputDirectory>
 								</artifactItem>
@@ -52,5 +67,6 @@
 				</executions>
 			</plugin>
 		</plugins>
+-->
 	</build>
 </project>
