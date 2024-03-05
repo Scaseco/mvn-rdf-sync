@@ -50,7 +50,7 @@ parent_template = env.get_template('parent.template.pom.xml')
 
 # Open the file and process each line
 modules = []
-for sub_module_idx in range(1, 500):
+for sub_module_idx in range(1, 2):
   triple_count = sub_module_idx * 1000
   # artifact_id = f'{project_prefix}{triple_count}'
   artifact_id = f'{project_prefix}{sub_module_idx}'
@@ -67,6 +67,8 @@ for sub_module_idx in range(1, 500):
     for i in range(0, triple_count):
       file.write(f'<https://www.example.org/subject{i}> <https://www.example.org/predicate{i}> <https://www.example.org/object{i}> .\n')
 
+  data_module_path = os.path.relpath(data_path, module_folder)
+
   module = {
     "moduleName": module_name,
     "parentStr": parent_str,
@@ -79,7 +81,7 @@ for sub_module_idx in range(1, 500):
       "url": "https://creativecommons.org/licenses/by/4.0/"
     }],
     "data": {
-      "path": data_path,
+      "path": data_module_path,
       "type": "nt"
     }
   }

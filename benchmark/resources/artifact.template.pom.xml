@@ -43,7 +43,7 @@
             <configuration>
               <artifacts>
                 <artifact>
-                  <file>${project.build.directory}/${data.path}</file>
+                  <file>${data.path}</file>
 		  <type>${data.type}</type>
                 </artifact>
               </artifacts>
