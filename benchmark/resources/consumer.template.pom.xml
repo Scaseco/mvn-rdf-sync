@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>{{this.groupId}}</groupId>
+	<artifactId>{{this.artifactId}}</artifactId>
+	<version>{{this.version}}</version>
+
+	{{this.parentStr}}
+
+	<packaging>pom</packaging>
+
+	<properties>
+		<datasetDirectory>${project.build.directory}/datasets</datasetDirectory>
+	</properties>
+
+	<build>
+		<resources>
+			<resource>
+				<directory>${project.build.directory}/datasets</directory>
+			</resource>
+		</resources>
+
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>resource-dependencies</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+						<configuration>
+							<stripVersion>true</stripVersion>
+							<artifactItems>
+								{% for item in this.modules %}
+								<artifactItem>
+									<groupId>{{item.groupId}}</groupId>
+									<artifactId>{{item.artifactId}}</artifactId>
+									<version>{{item.version}}</version>
+									<type>{{item.output.filetype}}</type>
+									<overWrite>true</overWrite>
+									<outputDirectory>${datasetDirectory}</outputDirectory>
+								</artifactItem>
+								{% endfor %}
+							</artifactItems>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+
+  {{this.parentStr}}
+
+  <groupId>{{this.groupId}}</groupId>
+  <artifactId>{{this.artifactId}}</artifactId>
+  <version>{{this.version}}</version>
+  <packaging>pom</packaging>
+  <!-- <name>{{this.name}}</name> -->
+  <description>{{this.description}}</description>
+  <!-- <url>{{this.url}}</url> -->
+
+  <licenses>
+    {% for license in this.licenses %}
+    <license>
+      <name>{{license.name}}</name>
+      <url>{{license.url}}</url>
+    </license>
+    {% endfor %}
+  </licenses>
+
+  <properties>
+    <data.path>{{this.data.path}}</data.path>
+    <data.type>{{this.data.type}}</data.type>
+  </properties>
+
+  <build>
+    <plugins>    
+      <!-- Attachment of the data file -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-artifacts</id>
+            <phase>package</phase>
+            <goals>
+              <goal>attach-artifact</goal>
+            </goals>
+            <configuration>
+              <artifacts>
+                <artifact>
+                  <file>${project.build.directory}/${data.path}</file>
+		  <type>${data.type}</type>
+                </artifact>
+              </artifacts>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+
