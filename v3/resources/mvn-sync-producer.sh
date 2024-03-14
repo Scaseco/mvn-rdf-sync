@@ -7,6 +7,8 @@
 # {abs_watch_dir}/{repoName}/{artifactPath}
 #
 
+set -o allexport
+
 echoerr() { echo "$@" 1>&2; }
 
 
@@ -23,13 +25,14 @@ WATCH_DIR_RAW="$1"
 # Normalize watch dir into an absolute path. Also removes trailing slash.
 
 if [ -z "$WATCH_DIR_RAW" ]; then
-  echo "No path to watch specified"
+  echoerr "No path to watch specified"
   exit 1
 fi
 
 WATCH_DIR="$(to_abs_path "$WATCH_DIR_RAW")"
-echo "Preparing to watch directory: $WATCH_DIR"
+echoerr "Preparing to watch directory: $WATCH_DIR"
 
+. "$SCRIPT_DIR"/shared.sh
 . "$SCRIPT_DIR"/maven-utils.sh
 . "$SCRIPT_DIR"/json-utils.sh
 # . "$SCRIPT_DIR"/kafka-utils.sh
@@ -61,32 +64,62 @@ parse-repo-path() {
   echo "${amap[@]@K}"
 }
 
+publish-record() {
+  RECORD="$1"
+  EVENT="$(cut -d' ' -f1 <<< "$RECORD")"
+  # -f2- outputs all columns starting from the 2nd one
+  ABSFILE="$(cut -d' ' -f2- <<< "$RECORD")"
+
+  echoerr "event: $RECORD - $EVENT - $ABSFILE"
+
+  declare -A map="($(parse-repo-path "$WATCH_DIR" "$ABSFILE"))"
+  PREFIX="${map['prefix']}"
+  RELFILE="${map['file']}"
+
+  echoerr "Change $EVENT in '$RELFILE' (under '$PREFIX')"    
+    
+  declare -A task
+  task['prefix']="$PREFIX"
+  task['relFile']="$RELFILE"
+  task['event']="$EVENT"
+    
+  JSONL="$(assoc-to-json "${task[@]@K}" "jsonl")"
+  echoerr "Publishing event: $JSONL"
+  "$KAFKA_HOME"/bin/kafka-console-producer.sh --topic "$KAFKA_TOPIC" --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" <<< "$JSONL" &
+  # process-file "$WORK_DIR" "$PREFIX" "$RELFILE" "$EVENT"
+}
+
+
 # By default auto topic creation is enabled upon publishing --consumer-property "auto.create.topics.enable=true"
 # "$KAFKA_HOME"/bin/kafka-topics.sh --create --topic "$KAFKA_TOPIC" --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" || true
 
+echoerr "Watching repository for changes to file matching pattern: $FILE_PATTERN"
+
 #echo "CLOSE_WRITE,CLOSE /watches/repository/org/aksw/data/gtfsbench/gtfsbench-csv-1-files/0.0.1-SNAPSHOT/_remote.repositories" | \
-inotifywait "$WATCH_DIR" --recursive --monitor --format '%e %w%f' --event CLOSE_WRITE --event DELETE | \
-  while read RECORD; do
-    EVENT="$(cut -d' ' -f1 <<< "$RECORD")"
-    # -f2- outputs all columns starting from the 2nd one
-    ABSFILE="$(cut -d' ' -f2- <<< "$RECORD")"
+inotifywait "$WATCH_DIR" --recursive --monitor --format '%e %w%f' --event CLOSE_WRITE --event DELETE --includei "$FILE_PATTERN" | \
+  xargs -P 8 -I {} -d '\n' bash -c 'publish-record "$@"' _ {}
 
-    echo "event: $RECORD - $EVENT - $ABSFILE"
-
-    declare -A map="($(parse-repo-path "$WATCH_DIR" "$ABSFILE"))"
-    PREFIX="${map['prefix']}"
-    RELFILE="${map['file']}"
-
-    echo "Change $EVENT in '$RELFILE' (under '$PREFIX')"    
-    
-    declare -A task
-    task['prefix']="$PREFIX"
-    task['relFile']="$RELFILE"
-    task['event']="$EVENT"
-    
-    JSONL="$(assoc-to-json "${task[@]@K}" "jsonl")"
-    echo "Publishing event: $JSONL"
-    "$KAFKA_HOME"/bin/kafka-console-producer.sh --topic "$KAFKA_TOPIC" --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" <<< "$JSONL"
-    # process-file "$WORK_DIR" "$PREFIX" "$RELFILE" "$EVENT"
-  done
+#  while read RECORD; do
+#    EVENT="$(cut -d' ' -f1 <<< "$RECORD")"
+#    # -f2- outputs all columns starting from the 2nd one
+#    ABSFILE="$(cut -d' ' -f2- <<< "$RECORD")"
+#
+#    echo "event: $RECORD - $EVENT - $ABSFILE"
+#
+#    declare -A map="($(parse-repo-path "$WATCH_DIR" "$ABSFILE"))"
+#    PREFIX="${map['prefix']}"
+#    RELFILE="${map['file']}"
+#
+#    echo "Change $EVENT in '$RELFILE' (under '$PREFIX')"    
+#    
+#    declare -A task
+#    task['prefix']="$PREFIX"
+#    task['relFile']="$RELFILE"
+#    task['event']="$EVENT"
+#    
+#    JSONL="$(assoc-to-json "${task[@]@K}" "jsonl")"
+#    echo "Publishing event: $JSONL"
+#    "$KAFKA_HOME"/bin/kafka-console-producer.sh --topic "$KAFKA_TOPIC" --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" <<< "$JSONL" &
+#    # process-file "$WORK_DIR" "$PREFIX" "$RELFILE" "$EVENT"
+#  done
 

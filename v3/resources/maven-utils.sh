@@ -82,7 +82,7 @@ parse-maven-path() {
 
 path-to-maven-gav() {
   dcatFile="$1"
-  declare -A map = "($(parse-maven-path "$dcatFile"))"
+  declare -A map="($(parse-maven-path "$dcatFile"))"
   echo "${map['groupId']}:${map['artifactId']}:${map['version']}"
   # echo "${map['groupId']}:${map['artifactId']}:${map['version']} | ${map['classifier']} | ${map['type']} | ${map['snapshotQualifier']} | ${map['versionSuffix']}"
 }

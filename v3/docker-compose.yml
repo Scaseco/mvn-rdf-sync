@@ -120,7 +120,8 @@ services:
       - ./settings.xml:/home/user/.m2/settings.xml
       - ./volumes/workdir:/workdir
       - ./resources:/home/user/mvn-sync/resources
-      - ./prepublish:/home/user/mvn-sync/prepublish
+      # - ./prepublish:/home/user/mvn-sync/prepublish
+      - ./prepublish:/prepublish
     # entrypoint: ["/home/user/mvn-sync/resources/mvn-sync-consumer.sh", "/watches", "/workdir"]
     entrypoint: ["/home/user/mvn-sync/resources/mvn-sync-consumer.sh", "/workdir", "${SPARQL_ENDPOINT}"]
     # entrypoint: ["/home/user/mvn-sync/resources/start.sh", "/repository", "/workdir"]

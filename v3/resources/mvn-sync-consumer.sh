@@ -5,6 +5,8 @@
 # abs_watch_dir/reponame/artifactFile
 #
 
+set -o allexport
+
 echoerr() { echo "$@" 1>&2; }
 
 SCRIPT_FILE="$(realpath "${BASH_SOURCE:-$0}")"
@@ -25,8 +27,10 @@ if [ -z "$SPARQL_ENDPOINT" ]; then
 fi
 
 
+. "$SCRIPT_DIR"/shared.sh
 . "$SCRIPT_DIR"/maven-utils.sh
 . "$SCRIPT_DIR"/json-utils.sh
+
 # . "$SCRIPT_DIR"/kafka-utils.sh
 
 ##
@@ -42,8 +46,11 @@ process-file() {
 
   echoerr "Detected event $EVENT on file: $RELFILE (under $PREFIX)"
 
+  # Adjust the file pattern: Substitute '|' with '\|'
+  FILE_PATTERNX="$(echo "$FILE_PATTERN" | sed "s/|/\\\|/g")"
+
   # Match dataset artifacts - for those files we instantiate metadata projects
-  export IN_TYPE="$(echo "$RELFILE" | sed -nE 's|^.*\.((nt\|ttl\|nq\|trig\|rdf(\.xml)?)(\.(gz\|bz2))?)$|\1|p')"
+  export IN_TYPE="$(echo "$RELFILE" | sed -nE "s|$FILE_PATTERNX|\1|p")"
 
   if  [[ "$RELFILE" =~ ^.*-dcat\..*\.*$ && ! -z "$IN_TYPE" ]]; then
     echoerr "Processing as dcat metadata: $RELFILE"
@@ -78,8 +85,8 @@ process-file() {
     mkdir -p "$OUT_FOLDER"
     cat "$SCRIPT_DIR/metadata.template.pom.xml" | envsubst '$IN_GROUPID $IN_ARTIFACTID $IN_VERSION $IN_TYPE $OUT_GROUPID $OUT_ARTIFACTID $OUT_VERSION' > "$OUT_FILE"
 
-    # (cd "$OUT_FOLDER" && mvn install)
-    (cd "$OUT_FOLDER" && mvn -Prelease deploy -Dmaven.install.skip)
+    (cd "$OUT_FOLDER" && mvn install)
+    # (cd "$OUT_FOLDER" && mvn -Prelease deploy -Dmaven.install.skip)
 
     echoerr "Completed processing as data artifact: $RELFILE (under $PREFIX)"
   fi
@@ -88,18 +95,40 @@ process-file() {
 # Create the topic if it doesn't already exist
 # "$KAFKA_HOME"/bin/kafka-topics.sh --create --topic "$KAFKA_TOPIC" --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" || true
 
-"$KAFKA_HOME"/bin/kafka-console-consumer.sh --topic "$KAFKA_TOPIC" --group "$KAFKA_GROUP" --from-beginning --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" | \
-  while read RECORD; do
-    echo "Received raw record: $RECORD"
-    declare -A map="($(json-to-assoc "$RECORD"))"
+process-record() {
+  RECORD="$1"
 
-    PREFIX="${map['prefix']}"
-    RELFILE="${map['relFile']}"
-    EVENT="${map['event']}"
+  echoerr "Received raw record: $RECORD"
+  declare -A map="($(json-to-assoc "$RECORD"))"
 
-    echo "Change $EVENT in '$RELFILE' (under '$PREFIX')"    
+  PREFIX="${map['prefix']}"
+  RELFILE="${map['relFile']}"
+  EVENT="${map['event']}"
+
+  echoerr "Change $EVENT in '$RELFILE' (under '$PREFIX')"    
     
-    echo "Processing: $WORK_DIR $PREFIX $RELFILE $EVENT"
-    process-file "$WORK_DIR" "$PREFIX" "$RELFILE" "$EVENT"
-  done
+  echoerr "Processing: $WORK_DIR $PREFIX $RELFILE $EVENT"
+  process-file "$WORK_DIR" "$PREFIX" "$RELFILE" "$EVENT"
+}
+
+
+# https://stackoverflow.com/questions/11003418/calling-shell-functions-with-xargs
+"$KAFKA_HOME"/bin/kafka-console-consumer.sh --topic "$KAFKA_TOPIC" --group "$KAFKA_GROUP" --from-beginning --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" | \
+  xargs -P 8 -I {} -d '\n' bash -c 'process-record "$@"' _ {}
+
+
+#cmd | \
+#  while read RECORD; do
+#    echo "Received raw record: $RECORD"
+#    declare -A map="($(json-to-assoc "$RECORD"))"
+#
+#    PREFIX="${map['prefix']}"
+#    RELFILE="${map['relFile']}"
+#    EVENT="${map['event']}"
+#
+#    echo "Change $EVENT in '$RELFILE' (under '$PREFIX')"    
+#    
+#    echo "Processing: $WORK_DIR $PREFIX $RELFILE $EVENT"
+#    process-file "$WORK_DIR" "$PREFIX" "$RELFILE" "$EVENT"
+#  done
 
